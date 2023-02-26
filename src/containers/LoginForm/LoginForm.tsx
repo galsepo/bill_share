@@ -15,6 +15,7 @@ interface LoginFormProps {
 
 export const LoginForm: FC<LoginFormProps> = ({ onLogin }) => {
   const {
+    setError,
     register,
     handleSubmit,
     formState: { errors, isValid, isDirty },
@@ -25,7 +26,7 @@ export const LoginForm: FC<LoginFormProps> = ({ onLogin }) => {
   const { setUser } = useUser();
   const { mutate, isLoading } = useMutation<
     User,
-    ErrorRequest,
+    Response,
     LoginInterface,
     unknown
   >(fetchLogin, {
@@ -33,10 +34,20 @@ export const LoginForm: FC<LoginFormProps> = ({ onLogin }) => {
       onLogin?.();
       setUser && setUser(data);
     },
-    onError: (error) => {
-      console.log(error);
-      if (error.status === "401") {
+    onError: async (error) => {
+      if (error.status === 401) {
         setUser(null);
+      }
+      if (error) {
+        const body: ErrorRequest = await error.json();
+        if (body.validation) {
+          Object.keys(body.validation).forEach((key: string) => {
+            setError(key as keyof LoginInterface, {
+              type: "value",
+              message: body?.validation?.[key],
+            });
+          });
+        }
       }
       // const message = getErrorMessage(error);
       // setFormError(message);

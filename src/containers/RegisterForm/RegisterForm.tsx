@@ -2,7 +2,7 @@ import { FC } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Field } from "../../components";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { LoginInterface, RegisterInterface, User } from "../../types/user";
+import { RegisterInterface, User } from "../../types/user";
 import { fetchRegister } from "../../__api__/auth";
 import { useUser } from "../../contexts/UserContext";
 import { signInSchema } from "../../utils/validation";
@@ -17,6 +17,7 @@ export const RegisterForm: FC<RegisterFormProps> = ({ onRegister }) => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isValid, isDirty },
   } = useForm<RegisterInterface>({
     resolver: yupResolver(signInSchema),
@@ -25,18 +26,28 @@ export const RegisterForm: FC<RegisterFormProps> = ({ onRegister }) => {
   const { setUser } = useUser();
   const { mutate, isLoading } = useMutation<
     User,
-    ErrorRequest,
-    LoginInterface,
+    Response,
+    RegisterInterface,
     unknown
   >(fetchRegister, {
     onSuccess: (data) => {
       onRegister?.();
       setUser && setUser(data);
     },
-    onError: (error) => {
-      console.log(error);
-      if (error.status === "401") {
+    onError: async (error) => {
+      if (error.status === 401) {
         setUser(null);
+      }
+      if (error) {
+        const body: ErrorRequest = await error.json();
+        if (body.validation) {
+          Object.keys(body.validation).forEach((key: string) => {
+            setError(key as keyof RegisterInterface, {
+              type: "value",
+              message: body?.validation?.[key],
+            });
+          });
+        }
       }
       // const message = getErrorMessage(error);
       // setFormError(message);

@@ -84,6 +84,7 @@ export const Field: FC<{
           </label>
         )}
       </div>
+      {error?.message && <p className="help is-danger">{error?.message}</p>}
     </div>
   );
 };

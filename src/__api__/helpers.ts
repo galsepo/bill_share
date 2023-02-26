@@ -9,6 +9,7 @@ export interface ErrorRequest {
   reason: string;
   status: string;
   timestamp: string;
+  validation?: Record<string, string>
 }
 
 export type FetchType = <JSON = unknown>(input: RequestInfo, init?: RequestInit) => Promise<JSON>
@@ -28,6 +29,6 @@ export const fetchAPI: FetchType = async (input, init) => {
     const data = await response.json();
     return data;
   } else {
-    return Promise.reject(response);
+    return Promise.reject<ErrorRequest>(response);
   }
 }
